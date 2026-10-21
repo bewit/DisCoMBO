@@ -1,0 +1,46 @@
+[
+    {
+        "type": "good",
+        "kind": "point",
+        "intervention": {"theta": 142.46},
+        "iteration": 5,
+        "task": "crossed_barrel"
+    },
+    {
+        "type": "bad",
+        "kind": "point",
+        "intervention": {"theta": 32.11, "n": 11.91, "r": 2.48},
+        "iteration": 5,
+        "task": "crossed_barrel"
+    },
+    {
+        "type": "good",
+        "kind": "dist",
+        "intervention": {"theta": {"dist": "uniform", "parameters": [141, 144]}},
+        "iteration": 5,
+        "task": "crossed_barrel"
+    },
+
+
+    {
+        "type": "good",
+        "kind": "point",
+        "intervention": {"theta": 142.46},
+        "iteration": 15,
+        "task": "crossed_barrel"
+    },
+    {
+        "type": "bad",
+        "kind": "point",
+        "intervention": {"theta": 33.11, "n": 12.01, "r": 2.58},
+        "iteration": 25,
+        "task": "crossed_barrel"
+    },
+    {
+        "type": "good",
+        "kind": "point",
+        "intervention": {"theta": 141.96},
+        "iteration": 35,
+        "task": "crossed_barrel"
+    }
+]

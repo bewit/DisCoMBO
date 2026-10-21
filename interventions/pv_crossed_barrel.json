@@ -1,0 +1,262 @@
+[
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "t": 1.3284645786710252,
+      "theta": 147.1147251125944
+    },
+    "performance": 2.515115393549647,
+    "iteration": 5
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "r": 1.8668106431956304,
+      "n": 11.35964817591638
+    },
+    "performance": 2.515115393549647,
+    "iteration": 5
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "theta": 151.66528624549883,
+      "n": 11.516727797223933
+    },
+    "performance": 2.515115393549647,
+    "iteration": 5
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "t": 1.4,
+      "theta": 146.02460624890733
+    },
+    "performance": 2.515115393549647,
+    "iteration": 5
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "r": 1.8892365683273815,
+      "t": 1.368886038858358
+    },
+    "performance": 2.515115393549647,
+    "iteration": 5
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "n": 11.35390677923252,
+      "r": 1.874061561720736,
+      "t": 1.3881618169950245,
+      "theta": 144.50936670501807
+    },
+    "performance": 2.515115393549647,
+    "iteration": 15
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "n": 11.339784155249584,
+      "r": 1.8511796187001688,
+      "t": 1.3954036652033426,
+      "theta": 144.55238786756266
+    },
+    "performance": 2.515115393549647,
+    "iteration": 25
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "n": 11.253276256378788,
+      "r": 1.8927860237097,
+      "t": 1.3943129579659337,
+      "theta": 146.3908217072344
+    },
+    "performance": 2.515115393549647,
+    "iteration": 35
+  },
+  {
+    "type": "good",
+    "kind": "dist",
+    "intervention": {
+      "t": {
+        "dist": "uniform",
+        "parameters": [
+          1.2571371334965553,
+          1.2746371334965554
+        ]
+      },
+      "theta": {
+        "dist": "uniform",
+        "parameters": [
+          138.5400168139312,
+          143.5400168139312
+        ]
+      }
+    },
+    "performance": 2.515115393549647,
+    "iteration": 5
+  },
+  {
+    "type": "good",
+    "kind": "dist",
+    "intervention": {
+      "theta": {
+        "dist": "uniform",
+        "parameters": [
+          148.0855084122659,
+          153.0855084122659
+        ]
+      },
+      "r": {
+        "dist": "uniform",
+        "parameters": [
+          1.93169877739988,
+          1.9566987773998799
+        ]
+      }
+    },
+    "performance": 2.515115393549647,
+    "iteration": 15
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "theta": 27.62136244035831,
+      "t": 0.927680725490719
+    },
+    "performance": -1.6708458091835101,
+    "iteration": 5
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "r": 2.492271283727836,
+      "theta": 33.13789943957492
+    },
+    "performance": -1.6708458091835101,
+    "iteration": 5
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "n": 11.428267042002933,
+      "theta": 77.12558148343534
+    },
+    "performance": -1.5165686260075582,
+    "iteration": 5
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "n": 11.275247889768988,
+      "t": 1.2765163012097025
+    },
+    "performance": -1.5165686260075582,
+    "iteration": 5
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "t": 1.3628380217864453,
+      "n": 11.013098316358711
+    },
+    "performance": -1.4923641253057556,
+    "iteration": 5
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "n": 11.027669444992824,
+      "r": 2.476459465013396,
+      "t": 1.028055841153391,
+      "theta": 19.219681578792613
+    },
+    "performance": -1.422975234761218,
+    "iteration": 15
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "n": 11.047063437772614,
+      "r": 2.482723608501433,
+      "t": 0.9664588628130915,
+      "theta": 20.96526483906118
+    },
+    "performance": -1.422975234761218,
+    "iteration": 25
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "n": 6.154231392297286,
+      "r": 1.5323529260529392,
+      "t": 0.7771959639450222,
+      "theta": 127.20369924358575
+    },
+    "performance": -1.3710290272736891,
+    "iteration": 35
+  },
+  {
+    "type": "bad",
+    "kind": "dist",
+    "intervention": {
+      "r": {
+        "dist": "uniform",
+        "parameters": [
+          2.199119337449149,
+          2.2241193374491495
+        ]
+      },
+      "n": {
+        "dist": "uniform",
+        "parameters": [
+          11.768417748254421,
+          11.91841774825442
+        ]
+      }
+    },
+    "performance": -1.341326049401468,
+    "iteration": 5
+  },
+  {
+    "type": "bad",
+    "kind": "dist",
+    "intervention": {
+      "theta": {
+        "dist": "uniform",
+        "parameters": [
+          25.12136244035831,
+          30.12136244035831
+        ]
+      },
+      "t": {
+        "dist": "uniform",
+        "parameters": [
+          0.917680725490719,
+          0.937680725490719
+        ]
+      }
+    },
+    "performance": -1.6708458091835101,
+    "iteration": 5
+  }
+]
