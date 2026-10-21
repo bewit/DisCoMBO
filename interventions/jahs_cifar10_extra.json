@@ -1,0 +1,242 @@
+[
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Op1": 3,
+      "Op4": 2,
+      "Op6": 3,
+      "Op5": 2
+    },
+    "performance": 86.03363037109375,
+    "iteration": 20
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Activation": 0,
+      "Resolution": 0.6960524556540976,
+      "LearningRate": 0.14858190031153262,
+      "Op6": 3
+    },
+    "performance": 85.63965606689453,
+    "iteration": 20
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Op6": 3,
+      "Resolution": 0.7638794680270187,
+      "WeightDecay": 0.0013980318756329937,
+      "Op5": 2
+    },
+    "performance": 85.20629119873047,
+    "iteration": 20
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Activation": 1,
+      "Op6": 1,
+      "Op5": 0,
+      "Op3": 2
+    },
+    "performance": 85.01412200927734,
+    "iteration": 20
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Op6": 2,
+      "N": 15,
+      "TrivialAugment": true,
+      "Op5": 2
+    },
+    "performance": 84.78568267822266,
+    "iteration": 20
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Op1": 2,
+      "Op3": 4,
+      "Op4": 2,
+      "Activation": 0
+    },
+    "performance": 84.63835144042969,
+    "iteration": 20
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Op6": 2,
+      "Activation": 2,
+      "LearningRate": 0.3691446220045523,
+      "W": 29
+    },
+    "performance": 84.58732604980469,
+    "iteration": 20
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Op4": 2,
+      "Op6": 0,
+      "Op2": 4,
+      "Op3": 2
+    },
+    "performance": 84.53406524658203,
+    "iteration": 20
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Op1": 3,
+      "Op5": 2,
+      "W": 20,
+      "Op6": 2
+    },
+    "performance": 84.52100372314453,
+    "iteration": 20
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Op1": 3,
+      "Resolution": 0.7271424577091326,
+      "Op5": 2,
+      "LearningRate": 0.1309694430533941
+    },
+    "performance": 84.44719696044922,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "TrivialAugment": false,
+      "Op1": 2,
+      "Op4": 1,
+      "Op3": 1
+    },
+    "performance": 4.202322006225586,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "Op3": 3,
+      "Op6": 3,
+      "Resolution": 0.745496741787573,
+      "Op2": 0
+    },
+    "performance": 5.156852722167969,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "W": 30,
+      "Op5": 1,
+      "Op4": 1,
+      "Op2": 1
+    },
+    "performance": 5.3436360359191895,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "N": 5,
+      "Resolution": 0.994226244206776,
+      "Op6": 1,
+      "W": 10
+    },
+    "performance": 5.364066123962402,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "Op2": 1,
+      "TrivialAugment": true,
+      "Op1": 2,
+      "Resolution": 0.8768604080068666
+    },
+    "performance": 5.366718292236328,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "W": 25,
+      "Op6": 1,
+      "WeightDecay": 0.0055219035546913795,
+      "Activation": 1
+    },
+    "performance": 5.413323402404785,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "WeightDecay": 0.0028178411012854186,
+      "Op2": 1,
+      "Op6": 3,
+      "TrivialAugment": true
+    },
+    "performance": 5.525208950042725,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "Op4": 0,
+      "WeightDecay": 0.0035182466731447266,
+      "Op2": 1,
+      "Activation": 1
+    },
+    "performance": 5.706654071807861,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "Op4": 1,
+      "TrivialAugment": true,
+      "W": 29,
+      "Op1": 2
+    },
+    "performance": 5.853710174560547,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "W": 19,
+      "LearningRate": 0.6621077964994926,
+      "Activation": 1,
+      "Op6": 1
+    },
+    "performance": 5.958925247192383,
+    "iteration": 20
+  }
+]

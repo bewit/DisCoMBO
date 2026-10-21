@@ -1,0 +1,422 @@
+[
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Activation": 1,
+      "LearningRate": 0.2857376396641972,
+      "N": 15,
+      "Op1": 0,
+      "Op2": 2,
+      "Op3": 2,
+      "Op4": 1,
+      "Op5": 0,
+      "Op6": 2,
+      "Resolution": 0.6464524831994356,
+      "TrivialAugment": true,
+      "W": 31,
+      "WeightDecay": 0.0004671002658089203
+    },
+    "performance": 85.09423065185547,
+    "iteration": 20
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Activation": 0,
+      "LearningRate": 0.8659346227508301,
+      "N": 12,
+      "Op1": 0,
+      "Op2": 0,
+      "Op3": 3,
+      "Op4": 2,
+      "Op5": 1,
+      "Op6": 2,
+      "Resolution": 0.6467454460846401,
+      "TrivialAugment": true,
+      "W": 23,
+      "WeightDecay": 0.00027224567177547537
+    },
+    "performance": 84.92601013183594,
+    "iteration": 20
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Activation": 0,
+      "LearningRate": 0.39807491758213764,
+      "N": 2,
+      "Op1": 3,
+      "Op2": 0,
+      "Op3": 1,
+      "Op4": 1,
+      "Op5": 2,
+      "Op6": 2,
+      "Resolution": 0.7804544282074253,
+      "TrivialAugment": true,
+      "W": 25,
+      "WeightDecay": 0.00116568607521811
+    },
+    "performance": 84.88522338867188,
+    "iteration": 20
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Activation": 0,
+      "LearningRate": 0.7649787838036276,
+      "N": 10,
+      "Op1": 3,
+      "Op2": 2,
+      "Op3": 2,
+      "Op4": 2,
+      "Op5": 2,
+      "Op6": 0,
+      "Resolution": 0.5448287571648223,
+      "TrivialAugment": true,
+      "W": 24,
+      "WeightDecay": 0.0001949268278127822
+    },
+    "performance": 84.5650405883789,
+    "iteration": 20
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Activation": 0,
+      "LearningRate": 0.0459282113982835,
+      "N": 14,
+      "Op1": 0,
+      "Op2": 2,
+      "Op3": 2,
+      "Op4": 0,
+      "Op5": 3,
+      "Op6": 3,
+      "Resolution": 0.8493817954420178,
+      "TrivialAugment": true,
+      "W": 25,
+      "WeightDecay": 0.0003972048081184046
+    },
+    "performance": 84.53592681884766,
+    "iteration": 20
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Activation": 0,
+      "LearningRate": 0.8481479893304035,
+      "N": 7,
+      "Op1": 1,
+      "Op2": 2,
+      "Op3": 0,
+      "Op4": 0,
+      "Op5": 3,
+      "Op6": 2,
+      "Resolution": 0.7206041716759048,
+      "TrivialAugment": true,
+      "W": 30,
+      "WeightDecay": 0.00024169889084728967
+    },
+    "performance": 84.52002716064453,
+    "iteration": 20
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Activation": 2,
+      "LearningRate": 0.22450011863852962,
+      "N": 12,
+      "Op1": 2,
+      "Op2": 2,
+      "Op3": 3,
+      "Op4": 1,
+      "Op5": 2,
+      "Op6": 1,
+      "Resolution": 0.6747914697331492,
+      "TrivialAugment": true,
+      "W": 29,
+      "WeightDecay": 0.0003227063215643377
+    },
+    "performance": 84.02708435058594,
+    "iteration": 20
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Activation": 0,
+      "LearningRate": 0.3616936841179141,
+      "N": 0,
+      "Op1": 2,
+      "Op2": 1,
+      "Op3": 3,
+      "Op4": 2,
+      "Op5": 3,
+      "Op6": 3,
+      "Resolution": 0.7703474775457221,
+      "TrivialAugment": true,
+      "W": 20,
+      "WeightDecay": 0.0005334813465763501
+    },
+    "performance": 83.99276733398438,
+    "iteration": 20
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Activation": 2,
+      "LearningRate": 0.37722988854552564,
+      "N": 0,
+      "Op1": 2,
+      "Op2": 0,
+      "Op3": 3,
+      "Op4": 4,
+      "Op5": 2,
+      "Op6": 2,
+      "Resolution": 0.8261343555153278,
+      "TrivialAugment": true,
+      "W": 29,
+      "WeightDecay": 0.0004224625070188431
+    },
+    "performance": 83.9905014038086,
+    "iteration": 20
+  },
+  {
+    "type": "good",
+    "kind": "point",
+    "intervention": {
+      "Activation": 0,
+      "LearningRate": 0.11313012970780176,
+      "N": 5,
+      "Op1": 3,
+      "Op2": 2,
+      "Op3": 1,
+      "Op4": 1,
+      "Op5": 0,
+      "Op6": 2,
+      "Resolution": 0.8891470457418694,
+      "TrivialAugment": true,
+      "W": 28,
+      "WeightDecay": 0.0003532918668305479
+    },
+    "performance": 83.91619110107422,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "Activation": 1,
+      "LearningRate": 0.8754553573847376,
+      "N": 11,
+      "Op1": 3,
+      "Op2": 2,
+      "Op3": 3,
+      "Op4": 2,
+      "Op5": 1,
+      "Op6": 3,
+      "Resolution": 0.8839462289915836,
+      "TrivialAugment": false,
+      "W": 2,
+      "WeightDecay": 0.005096238692651487
+    },
+    "performance": 4.748559474945068,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "Activation": 0,
+      "LearningRate": 0.31350639261983915,
+      "N": 9,
+      "Op1": 1,
+      "Op2": 1,
+      "Op3": 1,
+      "Op4": 0,
+      "Op5": 3,
+      "Op6": 3,
+      "Resolution": 0.8294481108212842,
+      "TrivialAugment": true,
+      "W": 25,
+      "WeightDecay": 0.008428856577935049
+    },
+    "performance": 5.125977039337158,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "Activation": 1,
+      "LearningRate": 0.8885484744366832,
+      "N": 12,
+      "Op1": 1,
+      "Op2": 1,
+      "Op3": 2,
+      "Op4": 3,
+      "Op5": 1,
+      "Op6": 3,
+      "Resolution": 0.05858534111686153,
+      "TrivialAugment": false,
+      "W": 18,
+      "WeightDecay": 0.00929731642295664
+    },
+    "performance": 5.456050395965576,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "Activation": 2,
+      "LearningRate": 0.22400378373656624,
+      "N": 10,
+      "Op1": 2,
+      "Op2": 1,
+      "Op3": 1,
+      "Op4": 1,
+      "Op5": 1,
+      "Op6": 1,
+      "Resolution": 0.8562578651279147,
+      "TrivialAugment": false,
+      "W": 25,
+      "WeightDecay": 0.007530156791713928
+    },
+    "performance": 5.6630449295043945,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "Activation": 1,
+      "LearningRate": 0.5888156474116044,
+      "N": 10,
+      "Op1": 3,
+      "Op2": 2,
+      "Op3": 1,
+      "Op4": 0,
+      "Op5": 1,
+      "Op6": 3,
+      "Resolution": 0.6141996844463251,
+      "TrivialAugment": false,
+      "W": 1,
+      "WeightDecay": 0.0082125203051762
+    },
+    "performance": 5.7554707527160645,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "Activation": 1,
+      "LearningRate": 0.8136126795539017,
+      "N": 4,
+      "Op1": 1,
+      "Op2": 1,
+      "Op3": 1,
+      "Op4": 0,
+      "Op5": 1,
+      "Op6": 1,
+      "Resolution": 0.67511799336031,
+      "TrivialAugment": true,
+      "W": 15,
+      "WeightDecay": 0.0018701808216962672
+    },
+    "performance": 6.060947418212891,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "Activation": 1,
+      "LearningRate": 0.6593921733327249,
+      "N": 8,
+      "Op1": 4,
+      "Op2": 3,
+      "Op3": 3,
+      "Op4": 0,
+      "Op5": 3,
+      "Op6": 3,
+      "Resolution": 0.623739169598826,
+      "TrivialAugment": false,
+      "W": 0,
+      "WeightDecay": 0.0024238070625494856
+    },
+    "performance": 6.22330379486084,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "Activation": 0,
+      "LearningRate": 0.9490402153877198,
+      "N": 13,
+      "Op1": 2,
+      "Op2": 2,
+      "Op3": 1,
+      "Op4": 1,
+      "Op5": 3,
+      "Op6": 2,
+      "Resolution": 0.6707549089216965,
+      "TrivialAugment": true,
+      "W": 25,
+      "WeightDecay": 0.009542501482783768
+    },
+    "performance": 6.289433002471924,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "Activation": 1,
+      "LearningRate": 0.8505344502491944,
+      "N": 13,
+      "Op1": 1,
+      "Op2": 2,
+      "Op3": 2,
+      "Op4": 3,
+      "Op5": 3,
+      "Op6": 1,
+      "Resolution": 0.5583860758951541,
+      "TrivialAugment": true,
+      "W": 20,
+      "WeightDecay": 0.008246782599040594
+    },
+    "performance": 6.293422698974609,
+    "iteration": 20
+  },
+  {
+    "type": "bad",
+    "kind": "point",
+    "intervention": {
+      "Activation": 1,
+      "LearningRate": 0.5695629551239908,
+      "N": 14,
+      "Op1": 1,
+      "Op2": 1,
+      "Op3": 3,
+      "Op4": 2,
+      "Op5": 3,
+      "Op6": 3,
+      "Resolution": 0.4761279844259092,
+      "TrivialAugment": true,
+      "W": 13,
+      "WeightDecay": 0.008240178701482161
+    },
+    "performance": 6.299655437469482,
+    "iteration": 20
+  }
+]

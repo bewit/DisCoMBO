@@ -1,0 +1,67 @@
+[
+    {
+        "type": "good",
+        "kind": "point",
+        "intervention": {"yaw_t000_deg": -10.83748690531058, "yaw_t001_deg": 11.472652376984005, "yaw_t002_deg": 13.89467307805834},
+        "iteration": 5
+    },
+    {
+        "type": "bad",
+        "kind": "point",
+        "intervention": {"yaw_t000_deg": -27.275959662325022, "yaw_t001_deg": 1.4292151641649902, "yaw_t002_deg": 26.63570488559511, "yaw_t003_deg": -25.844124879037324, "yaw_t004_deg": -18.74817789106919, "yaw_t005_deg": -29.885699970885156, "yaw_t006_deg": 9.70821606188883, "yaw_t007_deg": -27.2264816726402, "yaw_t008_deg": -21.44977989395875, "yaw_t009_deg": 23.53069799422112, "yaw_t010_deg": -8.328123875812214, "yaw_t011_deg": -29.022544007776677, "yaw_t012_deg": -15.702255207610008, "yaw_t013_deg": -19.815213890373023, "yaw_t014_deg": 23.418886185782853, "yaw_t015_deg": -1.0822319543582601, "yaw_t016_deg": 3.496271047466287},
+        "iteration": 5    
+    },
+    {
+        "type": "good",
+        "kind": "dist",
+        "intervention": {
+                         "yaw_t000_deg": {"dist": "uniform", "parameters": [-11, -10]},
+                         "yaw_t001_deg": {"dist": "uniform", "parameters": [10, 12]},
+                         "yaw_t002_deg": {"dist": "uniform", "parameters": [12, 14]}
+                        },
+        "iteration": 5
+    },
+
+    {
+        "type": "good",
+        "kind": "point",
+        "intervention": {"yaw_t000_deg": -10.83748690531058, "yaw_t001_deg": 11.472652376984005, "yaw_t002_deg": 13.89467307805834},
+        "iteration": 15
+    },
+    {
+        "type": "bad",
+        "kind": "point",
+        "intervention": {"yaw_t000_deg": -28.275959662325022, "yaw_t001_deg": 1.6292151641649902, "yaw_t002_deg": 27.53570488559511, "yaw_t003_deg": -25.844124879037324, "yaw_t004_deg": -18.74817789106919, "yaw_t005_deg": -29.885699970885156, "yaw_t006_deg": 9.70821606188883, "yaw_t007_deg": -27.2264816726402, "yaw_t008_deg": -21.44977989395875, "yaw_t009_deg": 23.53069799422112, "yaw_t010_deg": -8.328123875812214, "yaw_t011_deg": -29.022544007776677, "yaw_t012_deg": -15.702255207610008, "yaw_t013_deg": -19.815213890373023, "yaw_t014_deg": 23.418886185782853, "yaw_t015_deg": -1.0822319543582601, "yaw_t016_deg": 3.496271047466287},
+        "iteration": 25    
+    },
+    {
+        "type": "good",
+        "kind": "point",
+        "intervention": {"yaw_t000_deg": -11.23748690531058, "yaw_t001_deg": 12.072652376984005, "yaw_t002_deg": 14.09467307805834},
+        "iteration": 35
+    },
+    {
+        "type": "bad",
+        "kind": "dist",
+        "intervention": {
+                         "yaw_t000_deg": {"dist": "uniform", "parameters": [-27.78, -26.78]},
+                         "yaw_t001_deg": {"dist": "uniform", "parameters": [0.93, 1.93]},
+                         "yaw_t002_deg": {"dist": "uniform", "parameters": [26.14, 27.14]},
+                         "yaw_t003_deg": {"dist": "uniform", "parameters": [-26.34, -25.34]},
+                         "yaw_t004_deg": {"dist": "uniform", "parameters": [-19.25, -18.25]},
+                         "yaw_t005_deg": {"dist": "uniform", "parameters": [-30.0, -29.39]},
+                         "yaw_t006_deg": {"dist": "uniform", "parameters": [9.21, 10.21]},
+                         "yaw_t007_deg": {"dist": "uniform", "parameters": [-27.73, -26.73]},
+                         "yaw_t008_deg": {"dist": "uniform", "parameters": [-21.95, -20.95]},
+                         "yaw_t009_deg": {"dist": "uniform", "parameters": [23.03, 24.03]},
+                         "yaw_t010_deg": {"dist": "uniform", "parameters": [-8.83, -7.83]},
+                         "yaw_t011_deg": {"dist": "uniform", "parameters": [-29.52, -28.52]},
+                         "yaw_t012_deg": {"dist": "uniform", "parameters": [-16.20, -15.20]},
+                         "yaw_t013_deg": {"dist": "uniform", "parameters": [-20.32, -19.32]},
+                         "yaw_t014_deg": {"dist": "uniform", "parameters": [22.92, 23.92]},
+                         "yaw_t015_deg": {"dist": "uniform", "parameters": [-1.58, -0.58]},
+                         "yaw_t016_deg": {"dist": "uniform", "parameters": [3.00, 4.00]}
+                        },
+        "iteration": 5
+    }
+]
