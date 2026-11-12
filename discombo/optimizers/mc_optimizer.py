@@ -1,5 +1,6 @@
 from typing import Dict, List
 from .optimizer import Optimizer
+from ..result import BenchQueryResult
 from ..circuits import ConditioningError, condition, learn_circuit, parametric_specs, pvalues, sample
 from ..search_spaces import SearchSpace
 from ..utils import ConfigurationNumericalTransform
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 class MCOptimizer(Optimizer):
 
-    def __init__(self, search_space: SearchSpace, objective, iterations=100,
+    def __init__(self, search_space: SearchSpace, objective=None, iterations=100,
                  num_samples=20, initial_samples=20, exploration_method='stratified',
                  stratified_pool_size=1000, stratified_bins=10,
                  stratified_gamma_start=2.0, stratified_gamma_end=0.25,
@@ -39,8 +40,9 @@ class MCOptimizer(Optimizer):
 
         Args:
             search_space: SearchSpace object defining the hyperparameter domain.
-            objective: Objective function taking a config dict, returning BenchQueryResult.
-            iterations: Number of optimization iterations.
+            objective: Objective function taking a config dict, returning a BenchQueryResult (or a number),
+                both maximized. Only needed for `optimize`; with `ask`/`tell` it can be None.
+            iterations: Number of optimization iterations of `optimize`.
             num_samples: Number of candidate configs per iteration.
             initial_samples: Number of random samples for initializing the MC.
             stratified_pool_size: Number of candidates in the large pool for stratified
@@ -122,6 +124,10 @@ class MCOptimizer(Optimizer):
         self.hpo_runtimes = []
         self.data = None  # Joint (HPs + performance) numpy array, shape (N, D+1)
         self._curr_iter = 0
+        self._iteration = 0  # number of DisCoMBO iterations proposed by ask()
+        self._pending = None  # (configs, circuit-space rows or None, iteration) of the last ask()
+        self._stopped = False  # set when abort_after_intervention stops the optimization
+        self._intervene = False  # an intervention is active (its influence decays over the iterations)
 
         self.transform = ConfigurationNumericalTransform(search_space)
         self._build_normalizer()
@@ -137,81 +143,158 @@ class MCOptimizer(Optimizer):
 
     def optimize(self):
         """
-        Main optimization loop. Mirrors PCOptimizer's Algorithm 1 structure,
-        using circuit p-values (discombo.circuits.pvalues) for candidate selection.
+        Main optimization loop: the initial random design (skipped if observations were already passed to
+        `tell`) followed by `iterations` DisCoMBO iterations, each evaluating `num_samples` configurations.
+        Uses circuit p-values (discombo.circuits.pvalues) for candidate selection.
 
         Returns:
             tuple: (best_config_dict, best_BenchQueryResult)
         """
-        intervene = False
-        for i in range(self._num_iterations):
-            self._curr_iter = i
-            start_time = time() if self._log_hpo_runtime else None
-
-            if self.curr_mc is None:
-                self._learn_init_mc()
-            else:
-                self._learn_mc()
-
-            if self._intervention_iters is not None and self._interventions is not None:
-                if i in self._intervention_iters:
-                    int_idx = self._intervention_iters.index(i)
-                    logger.info("Iteration %d: applying intervention %d: %s", i + 1, int_idx,
-                                self._interventions[int_idx])
-                    self._intervention = self._interventions[int_idx]
-                    intervene = True and self._intervention is not None
-                    if intervene:
-                        evidence = self._apply_intervention(size=self._samples_per_iter)
-
-                        # Condition on best observed performance: we want
-                        # P(HPs | perf = best), not the joint marginal P(HPs).
-                        # `condition` removes the perf leaves and replaces
-                        # sum-node weights by their posterior given best_perf.
-                        n_dims = self.data.shape[1]
-                        perf_evidence = np.full((1, n_dims), np.nan)
-                        perf_evidence[0, -1] = self._get_conditioning_value()
-                        try:
-                            cond_mc = condition(self.curr_mc, perf_evidence)
-                        except ConditioningError:
-                            logger.warning(
-                                "Iteration %d: conditioning on the best observed value failed (sum-node "
-                                "normalizer underflow); computing the intervention p-value w.r.t. the joint "
-                                "distribution instead.", i + 1
-                            )
-                            cond_mc = self.curr_mc
-
-                        pvals = pvalues(
-                            cond_mc, evidence, side="both",
-                            corrected=self._intervention_pval_corrected,
-                        )
-                        pval_mean = float(np.clip(np.mean(pvals), 0.0, 1.0))
-                        self._exploit_override_remaining = 5
-                        self._intervention_pval_log.append({
-                            "iter": i,
-                            "intervention_idx": int_idx,
-                            "pval_mean": pval_mean,
-                            "pval_vec": np.atleast_1d(pvals).astype(float).tolist(),
-                        })
-                        if self._abort_after_intervention:
-                            logger.info("Iteration %d: abort_after_intervention is set, stopping after "
-                                        "computing the intervention p-value.", i + 1)
-                            break
-
-            configs = self._sample(intervene=intervene)
-
-            if self._log_hpo_runtime:
-                self.hpo_runtimes.append(time() - start_time)
-
-            self._evaluate(configs)
-            if self._exploit_override_remaining > 0:
-                self._exploit_override_remaining -= 1
-            logger.info("Iteration %d/%d: best observed value %.6g", i + 1, self._num_iterations,
+        if self.data is None:
+            configs = self.ask()
+            self.tell(configs, [self.objective(cfg) for cfg in configs])
+        while self._iteration < self._num_iterations:
+            configs = self.ask()
+            if not configs:  # stopped by abort_after_intervention
+                break
+            self.tell(configs, [self.objective(cfg) for cfg in configs])
+            logger.info("Iteration %d/%d: best observed value %.6g", self._iteration, self._num_iterations,
                         self.data[:, -1].max())
+        return self.best()
 
+    def ask(self) -> List[Dict]:
+        """
+        Propose the next batch of configurations to evaluate (ask-and-tell interface).
+
+        The first call returns `initial_samples` random configurations, unless observations were already passed
+        to `tell`. Every further call performs one DisCoMBO iteration: it learns a circuit on all observations
+        told so far, applies the intervention scheduled for this iteration (see `intervene`) and returns
+        `num_samples` configurations. Returns an empty list once `abort_after_intervention` stopped the
+        optimization.
+
+        Returns:
+            list: Configurations (dicts mapping hyperparameter names to values).
+        """
+        if self._stopped:
+            return []
+        if self.data is None:
+            configs = self.search_space.sample(size=self._initial_samples, rng=self._rand_state)
+            self._pending = (configs, None, self._iteration)
+            return list(configs)
+
+        i = self._iteration
+        self._curr_iter = i
+        start_time = time() if self._log_hpo_runtime else None
+        self._learn_mc()
+
+        if self._intervention_iters is not None and self._interventions is not None:
+            if i in self._intervention_iters:
+                int_idx = self._intervention_iters.index(i)
+                logger.info("Iteration %d: applying intervention %d: %s", i + 1, int_idx,
+                            self._interventions[int_idx])
+                self._intervention = self._interventions[int_idx]
+                self._intervene = self._intervention is not None
+                if self._intervene:
+                    evidence = self._apply_intervention(size=self._samples_per_iter)
+
+                    # Condition on best observed performance: we want
+                    # P(HPs | perf = best), not the joint marginal P(HPs).
+                    # `condition` removes the perf leaves and replaces
+                    # sum-node weights by their posterior given best_perf.
+                    n_dims = self.data.shape[1]
+                    perf_evidence = np.full((1, n_dims), np.nan)
+                    perf_evidence[0, -1] = self._get_conditioning_value()
+                    try:
+                        cond_mc = condition(self.curr_mc, perf_evidence)
+                    except ConditioningError:
+                        logger.warning(
+                            "Iteration %d: conditioning on the best observed value failed (sum-node "
+                            "normalizer underflow); computing the intervention p-value w.r.t. the joint "
+                            "distribution instead.", i + 1
+                        )
+                        cond_mc = self.curr_mc
+
+                    pvals = pvalues(
+                        cond_mc, evidence, side="both",
+                        corrected=self._intervention_pval_corrected,
+                    )
+                    pval_mean = float(np.clip(np.mean(pvals), 0.0, 1.0))
+                    self._exploit_override_remaining = 5
+                    self._intervention_pval_log.append({
+                        "iter": i,
+                        "intervention_idx": int_idx,
+                        "pval_mean": pval_mean,
+                        "pval_vec": np.atleast_1d(pvals).astype(float).tolist(),
+                    })
+                    if self._abort_after_intervention:
+                        logger.info("Iteration %d: abort_after_intervention is set, stopping after "
+                                    "computing the intervention p-value.", i + 1)
+                        self._stopped = True
+                        return []
+
+        sampled = self._sample(intervene=self._intervene)
+        if self._log_hpo_runtime:
+            self.hpo_runtimes.append(time() - start_time)
+        if self._exploit_override_remaining > 0:
+            self._exploit_override_remaining -= 1
+        self._iteration += 1
+
+        # `sampled` is in the circuit's (possibly normalized) space; keep these rows for `tell` and
+        # inverse-scale them to obtain the configurations.
+        rows = [list(row) for row in sampled]
+        configs = []
+        for row in rows:
+            raw = list(self._scale_from_hp(np.array([row], dtype=float))[0]) if self._normalize_inputs else row
+            configs.append(self.transform.inv_transform_configuration(raw))
+        self._pending = (configs, rows, i)
+        return list(configs)
+
+    def tell(self, configs: List[Dict], results) -> None:
+        """
+        Report evaluation results (ask-and-tell interface).
+
+        Args:
+            configs (list): Evaluated configurations, either as returned by `ask` or any other configurations of
+                the search space (e.g. evaluated before the optimization).
+            results (list): One result per configuration: a BenchQueryResult (its validation performance is
+                maximized), a number (maximized), or None for a failed evaluation, which is ignored.
+        """
+        if len(configs) != len(results):
+            raise ValueError(f"Got {len(configs)} configurations but {len(results)} results.")
+        pending_configs, pending_rows, pending_iter = self._pending or ([], None, self._iteration)
+        rows = []
+        for cfg, result in zip(configs, results):
+            if result is None:
+                continue
+            if not isinstance(result, BenchQueryResult):
+                result = BenchQueryResult(float(result), float(result), float(result))
+            k = next((k for k, proposed in enumerate(pending_configs) if proposed is cfg), None)
+            if k is not None and pending_rows is not None:
+                rows.append(pending_rows[k] + [result.val_performance])
+            else:
+                features = self.transform.transform_configuration(cfg) + [result.val_performance]
+                rows.append(list(self._scale_to_full(np.array([features], dtype=float))[0]))
+            self.evaluations.append((cfg, result, pending_iter if k is not None else self._iteration))
+        if rows:
+            rows = np.array(rows, dtype=float)
+            self.data = rows if self.data is None else np.concatenate((self.data, rows))
+
+    def best(self):
+        """
+        Returns:
+            tuple: The best observed (configuration, BenchQueryResult).
+        """
+        if not self.evaluations:
+            raise RuntimeError("No observations yet.")
         val_performances = [e.val_performance for _, e, _ in self.evaluations]
         max_idx = int(np.argmax(val_performances))
         cfg, res = self.evaluations[max_idx][:2]
         return cfg, res
+
+    @property
+    def iteration(self) -> int:
+        """Number of DisCoMBO iterations proposed by `ask` so far (the initial random design not counted)."""
+        return self._iteration
 
     def intervene(self, interventions: List[Dict], iters):
         """Set interventions (same interface as PCOptimizer)."""
@@ -221,27 +304,6 @@ class MCOptimizer(Optimizer):
     def get_intervention_pval_log(self) -> List[Dict]:
         """Return per-intervention p-value records captured during optimize()."""
         return list(self._intervention_pval_log)
-
-    def _build_dataset(self, configs, scores):
-        """Build joint (HPs + performance) data matrix.
-
-        Float HP cols are min-max scaled to [0,1] when `_normalize_inputs=True`.
-        """
-        data_matrix = []
-        for cfg, score in zip(configs, scores):
-            features = self.transform.transform_configuration(cfg)
-            features.append(score.val_performance)
-            data_matrix.append(features)
-            self.evaluations.append((cfg, score, self._curr_iter))
-        arr = np.array(data_matrix, dtype=float)
-        return self._scale_to_full(arr)
-
-    def _learn_init_mc(self):
-        """Sample initial random configs, evaluate, and learn the first SPN."""
-        configs = self.search_space.sample(size=self._initial_samples, rng=self._rand_state)
-        scores = [self.objective(cfg) for cfg in configs]
-        self.data = self._build_dataset(configs, scores)
-        self._learn_mc()
 
     def _learn_mc(self):
         """Dispatch to the appropriate SPN learning variant based on mc_type."""
@@ -528,31 +590,6 @@ class MCOptimizer(Optimizer):
                 sampled_configs_np[:, i] = np.clip(np.round(sampled_configs_np[:, i]), 0, n - 1)
 
         return sampled_configs_np
-
-    def _evaluate(self, sampled_configs):
-        """Evaluate sampled configs and add results to dataset.
-
-        `sampled_configs` arrives in scaled space when `_normalize_inputs=True`.
-        We inverse-scale per-row to call `inv_transform_configuration` (which
-        expects raw HP values), but keep the scaled row for `self.data` so the
-        SPN keeps learning in the same scaled space it samples in.
-        """
-        evaled_samples = []
-        for i in range(len(sampled_configs)):
-            scaled_sample = list(sampled_configs[i])
-            if self._normalize_inputs:
-                raw_sample = list(self._scale_from_hp(np.array([scaled_sample], dtype=float))[0])
-            else:
-                raw_sample = scaled_sample
-            config_dict = self.transform.inv_transform_configuration(raw_sample)
-            evaluation = self.objective(config_dict)
-            if evaluation is not None:
-                self.evaluations.append((config_dict, evaluation, self._curr_iter))
-                scaled_sample.append(evaluation.val_performance)
-                evaled_samples.append(scaled_sample)
-        evaled_samples = np.array(evaled_samples)
-        if evaled_samples.shape[0] > 0:
-            self.data = np.concatenate((self.data, evaled_samples))
 
     def _construct_search_space_metadata(self):
         """Build ball radius metadata for perturbation sampling."""

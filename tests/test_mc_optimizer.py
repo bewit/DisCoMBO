@@ -93,3 +93,39 @@ def test_progress_is_logged_not_printed(capsys, caplog):
         make_optimizer().optimize()
     assert capsys.readouterr().out == ''
     assert any('best observed value' in rec.getMessage() for rec in caplog.records)
+
+
+def test_ask_tell_loop_equals_optimize():
+    reference = make_optimizer(seed=3)
+    reference.intervene([{'momentum': {'dist': 'gauss', 'parameters': [0.9, 0.05]}}], [2])
+    reference.optimize()
+
+    opt = make_optimizer(seed=3)
+    opt.intervene([{'momentum': {'dist': 'gauss', 'parameters': [0.9, 0.05]}}], [2])
+    configs = opt.ask()
+    assert len(configs) == 10 and opt.iteration == 0  # initial random design
+    opt.tell(configs, [objective(cfg) for cfg in configs])
+    while opt.iteration < 8:
+        configs = opt.ask()
+        assert len(configs) == 5
+        for cfg in configs:  # results may also be reported one by one, as plain numbers
+            opt.tell([cfg], [objective(cfg).val_performance])
+    as_tuples = [[(cfg, r.val_performance, it) for cfg, r, it in o.history] for o in (reference, opt)]
+    assert as_tuples[0] == as_tuples[1]
+    assert opt.get_intervention_pval_log() == reference.get_intervention_pval_log()
+    assert opt.best()[1].val_performance == reference.best()[1].val_performance
+
+
+def test_tell_without_ask_warm_starts_and_ignores_failures():
+    opt = make_optimizer()
+    observed = SimpleSearchSpace(DEFINITION).sample(size=12, rng=1)
+    values = [objective(cfg).val_performance for cfg in observed]
+    opt.tell(observed + [observed[0]], values + [None])
+    assert len(opt.history) == 12
+    configs = opt.ask()  # no initial random design: the first ask is already a DisCoMBO iteration
+    assert len(configs) == 5 and opt.iteration == 1
+    for cfg in configs:
+        assert_valid(cfg)
+    assert opt.best()[1].val_performance == max(values)
+    with pytest.raises(ValueError):
+        opt.tell(configs, [1.0])

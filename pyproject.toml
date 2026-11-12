@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "discombo"
-version = "1.0.0"
+version = "1.1.0"
 description = "DisCoMBO: Steering Expert-in-the-Loop Black-Box Optimization via Distributional Conformance"
 readme = "README.md"
 license = "Apache-2.0"

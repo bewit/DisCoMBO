@@ -46,7 +46,7 @@ On macOS and Windows, the default PyTorch build from PyPI is already CPU-only.
 
 ## Usage
 DisCoMBO maximizes an objective over a search space. The search space is defined by a dictionary mapping each hyperparameter to its type and domain;
-the objective takes a configuration (a dictionary) and returns a `BenchQueryResult`, whose validation performance is maximized.
+the objective takes a configuration (a dictionary) and returns a number or a `BenchQueryResult`, whose validation performance is maximized.
 
 ```python
 from discombo import BenchQueryResult, MCOptimizer, SimpleSearchSpace
@@ -77,6 +77,23 @@ import logging
 logging.basicConfig(level=logging.INFO)
 ```
 
+### Ask-and-tell
+Instead of passing an objective, you can also evaluate the configurations yourself, e.g. in parallel or on a cluster.
+Each `ask` returns a batch of configurations: the initial random design first, then `num_samples` configurations per DisCoMBO iteration.
+
+```python
+optimizer = MCOptimizer(space, num_samples=10, initial_samples=20, seed=0)
+configs = optimizer.ask()            # the initial random design
+optimizer.tell(configs, [evaluate(cfg) for cfg in configs])
+while optimizer.iteration < 50:      # one DisCoMBO iteration per ask
+    configs = optimizer.ask()
+    optimizer.tell(configs, [evaluate(cfg) for cfg in configs])  # numbers, BenchQueryResults or None (failed)
+best_cfg, best_result = optimizer.best()
+```
+
+`tell` also accepts configurations that were not proposed by `ask`, e.g. earlier evaluations to warm-start DisCoMBO; then the first `ask` already performs a DisCoMBO iteration.
+With the same seed, this loop is equivalent to `optimize`.
+
 ### Expert knowledge
 Expert beliefs are injected as interventions in given iterations, either as fixed values (point interventions) or as distributions over values.
 Discrete hyperparameters are referred to by the index of the value in `'allowed'`.
@@ -93,14 +110,21 @@ Continuous hyperparameters with `'is_log': True` are modeled in log space, so th
 After optimization, `optimizer.get_intervention_pval_log()` returns the distributional conformance (p-values) of each intervention w.r.t. the model.
 
 ### Usage with Optuna
+The `DisCoMBOSampler` on OptunaHub runs DisCoMBO as an Optuna sampler: after `n_startup_trials` random trials, DisCoMBO proposes batches of `batch_size` configurations for the following trials.
+Expert beliefs are given in the parameters' own values (and distributions as above) and apply from a trial number on.
+
 ```python
 import optuna
 import optunahub
 
-module = optunahub.load_module("samplers/discombo")
-study = optuna.create_study(direction="maximize", sampler=module.DisCoMBOSampler(seed=0))
+sampler = optunahub.load_module("samplers/discombo").DisCoMBOSampler(seed=0, n_startup_trials=20, batch_size=10)
+sampler.intervene({"optimizer": "adam"}, trial_number=30)  # optional: an expert belief
+study = optuna.create_study(direction="maximize", sampler=sampler)
 study.optimize(objective, n_trials=100)  # objective(trial) as usual in Optuna
+print(sampler.get_intervention_pvalues())  # conformance of the belief with the observations
 ```
+
+See the [OptunaHub page](https://hub.optuna.org/samplers/discombo/) for all options.
 
 ## Structure
 - `discombo/optimizers/mc_optimizer.py`: the DisCoMBO optimizer.
