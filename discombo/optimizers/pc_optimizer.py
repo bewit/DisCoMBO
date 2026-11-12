@@ -1,21 +1,11 @@
 from typing import Dict, List
 from .optimizer import Optimizer
+from ..circuits import HISTOGRAM, compute_domains, learn_circuit, metatype_specs, mixture, parametric_specs, sample
 from ..search_spaces import SearchSpace
 from ..utils import ConfigurationNumericalTransform
 from ..utils.ibo import create_quantile_buckets, create_buckets, compute_bin_number
+from ..utils.sampling import sample_from_ball
 import numpy as np
-from spn.algorithms.LearningWrappers import learn_mspn, learn_parametric
-from spn.algorithms.Sampling import sample_instances
-from spn.structure.leaves.parametric.Parametric import Gaussian, Categorical, Bernoulli
-from spn.structure.Base import Context, Sum, assign_ids
-from spn.structure.StatisticalTypes import MetaType
-from ..consts.dtypes import MetaType as CustomMetaType
-
-_METATYPE_MAP = {
-    CustomMetaType.REAL: MetaType.REAL,
-    CustomMetaType.BINARY: MetaType.BINARY,
-    CustomMetaType.DISCRETE: MetaType.DISCRETE,
-}
 from numpy.random.mtrand import RandomState
 from sklearn.metrics import r2_score
 import scipy
@@ -235,66 +225,27 @@ class PCOptimizer(Optimizer):
             Learn a MSPN over the joint space of hyperparameters and evaluations.
         """
         self._construct_search_space_metadata()
-        self.ctxt.add_domains(self.data)
         mu_hp = max(5, self.data.shape[0] // 100)
         # NOTE: If this fails with memory error, try rounding the performances
         try:
-            self.curr_pc = learn_mspn(self.data, self.ctxt, min_instances_slice=10, threshold=0.2, n_clusters=2)
+            self.curr_pc = learn_circuit(self.data, self.specs, family=HISTOGRAM, min_instances_slice=10, threshold=0.2, n_clusters=2)
         except ValueError:
             # sometimes learning fails due convergence failure of RDC. Try again with less restrictions
-            self.curr_pc = learn_mspn(self.data, self.ctxt, min_instances_slice=40, threshold=0.5, n_clusters=2)
+            self.curr_pc = learn_circuit(self.data, self.specs, family=HISTOGRAM, min_instances_slice=40, threshold=0.5, n_clusters=2)
 
     def _learn_pc_parametric(self, only_gaussian: bool = False):
         """
             Learn a parametric SPN with per-variable leaf types derived from the
-            search space: float -> Gaussian (REAL), int/str/cat -> Categorical
-            (DISCRETE), bool -> Bernoulli (BINARY). If only_gaussian=True, all
-            leaves are Gaussian (continuous search spaces only).
+            search space: float -> Normal, int -> Bernoulli (2 values), Normal (>= 20 values)
+            or Categorical, str/cat -> Categorical, bool -> Bernoulli. If only_gaussian=True,
+            all leaves are Normal (continuous search spaces only).
         """
-        if only_gaussian:
-            param_types = [Gaussian] * (self.data.shape[1])
-            meta_types = [MetaType.REAL] * (self.data.shape[1])
-        else:
-            search_space_definition = self.search_space.get_search_space_definition()
-            meta_types = []
-            param_types = []
-            for val in search_space_definition.values():
-                dtype = val.get('dtype', 'float')
-                if dtype == 'float':
-                    meta_types.append(MetaType.REAL)
-                    param_types.append(Gaussian)
-                elif dtype == 'int':
-                    if 'allowed' in val and val['allowed'] is not None:
-                        n_unique = len(val['allowed'])
-                    else:
-                        n_unique = int(val['max']) - int(val['min']) + 1
-                    if n_unique == 2:
-                        meta_types.append(MetaType.BINARY)
-                        param_types.append(Bernoulli)
-                    elif n_unique >= 20:
-                        meta_types.append(MetaType.REAL)
-                        param_types.append(Gaussian)
-                    else:
-                        meta_types.append(MetaType.DISCRETE)
-                        param_types.append(Categorical)
-                elif dtype in ('str', 'cat'):
-                    meta_types.append(MetaType.DISCRETE)
-                    param_types.append(Categorical)
-                elif dtype == 'bool':
-                    meta_types.append(MetaType.BINARY)
-                    param_types.append(Bernoulli)
-                else:
-                    meta_types.append(MetaType.REAL)
-                    param_types.append(Gaussian)
-            meta_types.append(MetaType.REAL)   # performance column
-            param_types.append(Gaussian)
-
-        ctxt = Context(meta_types=meta_types, parametric_types=param_types)
-        ctxt.add_domains(self.data)
+        specs = parametric_specs(self.search_space.get_search_space_definition(), int_real_threshold=20,
+                                 only_real=only_gaussian)
         try:
-            self.curr_pc = learn_parametric(self.data, ctxt, min_instances_slice=5, threshold=0.3)
+            self.curr_pc = learn_circuit(self.data, specs, min_instances_slice=5, threshold=0.3)
         except ValueError:
-            self.curr_pc = learn_parametric(self.data, ctxt, min_instances_slice=15, threshold=0.5)
+            self.curr_pc = learn_circuit(self.data, specs, min_instances_slice=15, threshold=0.5)
 
     def _learn_pc_quantile(self, buckets=20, split_mode='linear', min_samples_per_bucket=10, q_max=0.99):
         """
@@ -324,7 +275,8 @@ class PCOptimizer(Optimizer):
             q_max (float, optional): Maximum quantile used if split_mode is 'binary_trees' or 'bt+lin'. Defaults to 0.99.
         """
         self._construct_search_space_metadata()
-        self.ctxt.add_domains(self.data)
+        # all buckets share the domains of the full data
+        domains = compute_domains(self.data, self.specs)
         y = self.data[:, -1]
         idx = np.argsort(y).flatten()
         if split_mode == 'linear':
@@ -344,20 +296,13 @@ class PCOptimizer(Optimizer):
             subset = self.data[idx_chunk]
             weights.append(len(idx_chunk))
             try:
-                spn = learn_mspn(subset, self.ctxt, min_instances_slice=5, threshold=0.2, n_clusters=2)
+                spn = learn_circuit(subset, self.specs, family=HISTOGRAM, min_instances_slice=5, threshold=0.2, n_clusters=2, domains=domains)
             except ValueError:
                 # sometimes learning fails due convergence failure of RDC. Try again with less restrictions
-                spn = learn_mspn(subset, self.ctxt, min_instances_slice=40, threshold=0.5, n_clusters=2)
+                spn = learn_circuit(subset, self.specs, family=HISTOGRAM, min_instances_slice=40, threshold=0.5, n_clusters=2, domains=domains)
             spns.append(spn)
 
-        sum = Sum()
-        scope = spns[0].scope
-        sum.scope = scope
-        weights = np.array(weights) / np.sum(weights)
-        sum.weights = weights
-        sum.children = spns
-        spn = assign_ids(sum)
-        self.curr_pc = spn
+        self.curr_pc = mixture(spns, weights)
     
     def _get_conditioning_value(self):
         """
@@ -406,22 +351,13 @@ class PCOptimizer(Optimizer):
         # EI sampling
         if self._use_eic:
             sampled_configs = self._ei()
-        # Intervention covers every HP dim — no NaN left to sample.
-        # spflow.sample_instances asserts ≥1 NaN per row, so use the fully-
-        # observed cond_array directly.
+        # Intervention covers every HP dim — no NaN left to sample,
+        # so use the fully-observed cond_array directly.
         elif intervene and not np.isnan(cond_array).any():
             sampled_configs = cond_array[:self._samples_per_iter, :-1]
         # Conditional sampling with self-reensurance
         else:
-            best_configs = []
-            for i in range(self._num_self_consistency_samplings):
-                samples_ = sample_instances(self.curr_pc, np.array(cond_array), np.random.RandomState(i))
-                re_ensurance_cond = np.copy(samples_)
-                re_ensurance_cond[:, -1] = np.nan
-                y_pred = sample_instances(self.curr_pc, re_ensurance_cond, np.random.RandomState(i))[:, -1].flatten()
-                idx = np.argmax(y_pred).flatten()[0]
-                best_configs.append(samples_[idx])
-            samples = np.array(best_configs)
+            samples = self._self_consistency_rounds(cond_array)
             y_ = samples[:, -1]
             idx = np.argsort(y_).flatten()[:self._samples_per_iter]
             samples = samples[idx]
@@ -448,18 +384,27 @@ class PCOptimizer(Optimizer):
                     sampled_configs[j, i] = min(sampled_configs[j, i], n - 1)
         return sampled_configs
 
+    def _self_consistency_rounds(self, cond_array):
+        """
+            Perform 'num_self_consistency_samplings' rounds of conditional sampling: in each round, sample one
+            configuration per row of 'cond_array', predict its evaluation score with the PC and keep the
+            configuration with the highest predicted score. All rounds are sampled in one batched call.
+
+        Returns:
+            np.ndarray: Best sample (including the conditioning score) of each round.
+        """
+        n_rounds = self._num_self_consistency_samplings
+        n_rows = cond_array.shape[0]
+        samples_ = sample(self.curr_pc, cond_array, seed=0, n_repeats=n_rounds)
+        re_ensurance_cond = np.copy(samples_)
+        re_ensurance_cond[:, -1] = np.nan
+        y_pred = sample(self.curr_pc, re_ensurance_cond, seed=0)[:, -1].reshape(n_rounds, n_rows)
+        best_idx = np.argmax(y_pred, axis=1)
+        return samples_.reshape(n_rounds, n_rows, -1)[np.arange(n_rounds), best_idx]
+
     def _sample_self_consistent(self, n_samples, cond_array):
         """Self-consistent sampling returning n_samples configs (no ball perturbation)."""
-        cond = cond_array[:n_samples]
-        best_configs = []
-        for i in range(self._num_self_consistency_samplings):
-            samples_ = sample_instances(self.curr_pc, np.array(cond), np.random.RandomState(i))
-            re_ensurance_cond = np.copy(samples_)
-            re_ensurance_cond[:, -1] = np.nan
-            y_pred = sample_instances(self.curr_pc, re_ensurance_cond, np.random.RandomState(i))[:, -1].flatten()
-            idx = np.argmax(y_pred).flatten()[0]
-            best_configs.append(samples_[idx])
-        samples = np.array(best_configs)
+        samples = self._self_consistency_rounds(cond_array[:n_samples])
         y_ = samples[:, -1]
         idx = np.argsort(y_).flatten()[:n_samples]
         return samples[idx, :-1]
@@ -496,11 +441,8 @@ class PCOptimizer(Optimizer):
             eic_samples = np.array([self.transform.transform_configuration(cfg) for cfg in eic_samples])
             nan_column = np.full((eic_samples.shape[0], 1), np.nan)
             cond_matrix = np.hstack((eic_samples, nan_column))
-            pred_mat = []
-            for i in range(self._num_ei_variance_approx):
-                preds = sample_instances(self.curr_pc, cond_matrix, np.random.RandomState(i))[:, -1]
-                pred_mat.append(preds)
-            pred_mat = np.array(pred_mat)
+            preds = sample(self.curr_pc, cond_matrix, seed=0, n_repeats=self._num_ei_variance_approx)[:, -1]
+            pred_mat = preds.reshape(self._num_ei_variance_approx, -1)
             mean_preds = np.mean(pred_mat, axis=0)
             mean_std = np.std(pred_mat, axis=0)
             improve = self._get_conditioning_value() - 0.01 - mean_preds
@@ -515,10 +457,9 @@ class PCOptimizer(Optimizer):
     
     def _construct_search_space_metadata(self):
         search_space_definition = self.search_space.get_search_space_definition()
-        meta_types = [_METATYPE_MAP.get(val['type'], val['type']) for val in search_space_definition.values()]
-        meta_types += [MetaType.REAL]
+        # leaf types of histogram PCs are given by the MetaType of each hyperparameter
+        self.specs = metatype_specs(search_space_definition)
         self.hyperparam_names = list(search_space_definition.keys())
-        self.ctxt = Context(meta_types=meta_types)
 
         # set radius for sampling
         self.ball_radius = []
@@ -546,11 +487,8 @@ class PCOptimizer(Optimizer):
         evidence[:, -1] = np.nan
         y_test = self.data[:, -1].flatten()
 
-        preds = []
-        for i in range(20):
-            pc_preds = sample_instances(self.curr_pc, evidence, np.random.RandomState(i))
-            preds.append(pc_preds[:, -1].flatten())
-        pc_preds = np.array(preds).mean(axis=0)
+        preds = sample(self.curr_pc, evidence, seed=0, n_repeats=20)[:, -1].reshape(20, -1)
+        pc_preds = preds.mean(axis=0)
         #pc_preds = mpe(spn, evidence)[:, -1].flatten()
         pc_r2 = r2_score(y_test, pc_preds.flatten())
         print(pc_r2)
@@ -565,46 +503,3 @@ class PCOptimizer(Optimizer):
                 evaluations.append((cfg, eval_res, it))
             return evaluations
         return self.evaluations
-    
-def sample_from_ball(center, search_space: SearchSpace, radius, n_samples):
-    """
-    Sample random points uniformly from a ball around a given center.
-    
-    Parameters:
-        center (array-like): Coordinates of the center of the ball.
-        search_space (SearchSpace): Search space of the current HPO task.
-        radius (list or float): Radius of the ball per dimension.
-        n_samples (int): Number of points to sample.
-
-    Returns:
-        np.ndarray: Array of shape (n_samples, dimension) with sampled points.
-    """
-    if isinstance(radius, list):
-        radius = np.array(radius)
-    points = []
-
-    search_space_def = search_space.get_search_space_definition()
-
-    # only apply ball sampling to real dimensions
-    real_dims = [i for i, v in enumerate(search_space_def.values()) if v['dtype'] == 'float']
-    other_dims = [(name, i) for i, (name, v) in enumerate(search_space_def.items()) if v['dtype'] != 'float']
-
-    for i in range(n_samples):
-        if len(real_dims) > 0:
-            # Generate a random direction (unit vector) in `dimension` space
-            direction = np.random.normal(size=len(real_dims))
-            direction /= np.linalg.norm(direction)
-            
-            # Generate a random distance from the center, scaled to fit inside the radius
-            distance = np.random.uniform(0, 1) ** (1 / len(real_dims)) * radius[real_dims]
-            
-            # Compute the point
-            center[i, real_dims] = center[i, real_dims] + direction * distance
-        for name, j in other_dims:
-            coin = np.random.choice([0, 1], p=[1-radius[j], radius[j]])
-            if coin == 1:
-                choices = np.arange(0, len(search_space_def[name]['allowed']))
-                rnd_cfg = np.random.choice(choices)
-                center[i, j] = rnd_cfg
-        points.append(center[i])
-    return np.array(points)

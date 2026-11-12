@@ -1,14 +1,16 @@
 import os
+import sysconfig
 
 def setup_environment():
     # set symlink for NASLib data
     data_abs_dir = os.path.abspath('./benchmark_data/')
-    if not os.path.exists('/usr/local/lib/python3.9/site-packages/naslib/data/'):
-        os.mkdir('/usr/local/lib/python3.9/site-packages/naslib/data/')
-        os.system('wget -O /usr/local/lib/python3.9/site-packages/naslib/data/nasbench_only108.pkl https://figshare.com/ndownloader/files/53291267')
-        os.system('wget -O /usr/local/lib/python3.9/site-packages/naslib/data/nb201_ImageNet16_full_training.pickle https://figshare.com/ndownloader/files/53291258')
-        os.system('wget -O /usr/local/lib/python3.9/site-packages/naslib/data/nb201_cifar10_full_training.pickle https://figshare.com/ndownloader/files/53291264')
-        os.system('wget -O /usr/local/lib/python3.9/site-packages/naslib/data/nb201_cifar100_full_training.pickle https://figshare.com/ndownloader/files/53291261')
+    naslib_data_dir = os.path.join(sysconfig.get_paths()['purelib'], 'naslib', 'data')
+    if not os.path.exists(naslib_data_dir):
+        os.mkdir(naslib_data_dir)
+        os.system(f'wget -O {naslib_data_dir}/nasbench_only108.pkl https://figshare.com/ndownloader/files/53291267')
+        os.system(f'wget -O {naslib_data_dir}/nb201_ImageNet16_full_training.pickle https://figshare.com/ndownloader/files/53291258')
+        os.system(f'wget -O {naslib_data_dir}/nb201_cifar10_full_training.pickle https://figshare.com/ndownloader/files/53291264')
+        os.system(f'wget -O {naslib_data_dir}/nb201_cifar100_full_training.pickle https://figshare.com/ndownloader/files/53291261')
 
     if not os.path.exists(data_abs_dir):
         os.mkdir(data_abs_dir)

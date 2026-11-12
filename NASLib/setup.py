@@ -4,10 +4,10 @@ import subprocess
 from setuptools import setup, find_packages
 
 # Check for python version
-if sys.version_info.major != 3 or sys.version_info.minor < 7 or sys.version_info.minor > 9:
+if sys.version_info.major != 3 or sys.version_info.minor < 7 or sys.version_info.minor > 10:
     raise ValueError(
         'Unsupported Python version %d.%d.%d found. NASLib requires Python '
-        '3.7, 3.8 or 3.9' % (sys.version_info.major, sys.version_info.minor, sys.version_info.micro)
+        '3.7, 3.8, 3.9 or 3.10' % (sys.version_info.major, sys.version_info.minor, sys.version_info.micro)
     )
 
 

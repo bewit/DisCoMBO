@@ -1,34 +1,20 @@
 from typing import Dict, List
 from .optimizer import Optimizer
-from .pc_optimizer import sample_from_ball
+from ..circuits import ConditioningError, condition, learn_circuit, parametric_specs, pvalues, sample
 from ..search_spaces import SearchSpace
 from ..utils import ConfigurationNumericalTransform
+from ..utils.sampling import sample_from_ball
 import numpy as np
 import warnings
 from time import time
-
-from spn.algorithms.LearningWrappers import learn_mspn, learn_parametric
-from spn.algorithms.Sampling import sample_instances
-from spn.algorithms.Inference import log_likelihood
-from spn.algorithms.Condition import condition
-from spn.structure.Base import Context
-from spn.structure.StatisticalTypes import MetaType
-from spn.structure.leaves.parametric.Parametric import Gaussian, Categorical, Bernoulli
-
-_METATYPE_TO_PARAMETRIC = {
-    MetaType.REAL: Gaussian,
-    MetaType.DISCRETE: Categorical,
-    MetaType.BINARY: Bernoulli,
-}
-from membership_circuits.models.nodewise.spflow_pvalue import pvalue_spflow
 
 warnings.filterwarnings("ignore")
 
 """
     Implementation of the MC-HPO optimizer.
-    Uses SPFlow's learn_mspn for structure learning and membership_circuits'
-    pvalue_spflow for p-value computation (Fisher's method at product nodes,
-    weighted corrected adaptive arithmetic mean at sum nodes).
+    Uses LearnSPN circuits on spflow (discombo.circuits) for structure learning and
+    p-value computation (Fisher's method at product nodes, weighted corrected adaptive
+    arithmetic mean at sum nodes).
 """
 
 
@@ -84,20 +70,12 @@ class MCOptimizer(Optimizer):
             normalize_inputs: If True, min-max scale float HP columns to [0, 1]
                 using the search-space bounds (log-bounds when is_log=True) before
                 fitting the SPN. Categorical/discrete dims and the performance
-                column are left untouched. The variance-floor for `make_min_variance_leaf`
-                is also re-tuned (epsilon_abs=1e-6, epsilon_rel=0.1) so leaves can
-                concentrate in the smaller normalized scale.
+                column are left untouched.
             mc_min_instances: Minimum instances per leaf in SPN structure learning.
             mc_rdc_threshold: RDC independence threshold for column partitioning.
             mc_k_clusters: Number of row clusters for structure learning.
-            mc_type: SPN learning variant. One of:
-                - 'mixed': Per-variable parametric leaves via learn_parametric
-                  (Gaussian/Categorical/Bernoulli per MetaType). Handles mixed
-                  search spaces correctly with parametric distributions.
-                - 'mspn': Histogram leaves via learn_mspn — non-parametric,
-                  also handles mixed types but less interpretable.
-                - 'parametric': All-Gaussian leaves via learn_parametric — only
-                  suitable for fully continuous search spaces.
+            mc_type: SPN learning variant. Only 'mixed' is supported: per-variable
+                parametric leaves (Normal/Categorical/Bernoulli per hyperparameter dtype).
             log_hpo_runtime: Whether to log optimizer runtime.
             seed: Random seed.
         """
@@ -159,7 +137,7 @@ class MCOptimizer(Optimizer):
     def optimize(self):
         """
         Main optimization loop. Mirrors PCOptimizer's Algorithm 1 structure,
-        using SPFlow SPNs and pvalue_spflow for p-value rejection sampling.
+        using circuit p-values (discombo.circuits.pvalues) for candidate selection.
 
         Returns:
             tuple: (best_config_dict, best_BenchQueryResult)
@@ -188,15 +166,14 @@ class MCOptimizer(Optimizer):
 
                         # Condition on best observed performance: we want
                         # P(HPs | perf = best), not the joint marginal P(HPs).
-                        # SPFlow's `condition` consumes the perf leaves and
-                        # rewrites sum-node weights by leaf likelihoods at
-                        # best_perf.
+                        # `condition` removes the perf leaves and replaces
+                        # sum-node weights by their posterior given best_perf.
                         n_dims = self.data.shape[1]
                         perf_evidence = np.full((1, n_dims), np.nan)
                         perf_evidence[0, -1] = self._get_conditioning_value()
                         try:
                             cond_mc = condition(self.curr_mc, perf_evidence)
-                        except AssertionError:
+                        except ConditioningError:
                             print(
                                 "[Optimizer][MC] condition() failed "
                                 "(sum-node normalizer underflow); "
@@ -204,10 +181,10 @@ class MCOptimizer(Optimizer):
                             )
                             cond_mc = self.curr_mc
 
-                        pvals = pvalue_spflow(
+                        pvals = pvalues(
                             cond_mc, evidence, side="both",
                             corrected=self._intervention_pval_corrected,
-                        ).squeeze()
+                        )
                         pval_mean = float(np.clip(np.mean(pvals), 0.0, 1.0))
                         self._exploit_override_remaining = 5
                         self._intervention_pval_log.append({
@@ -276,72 +253,32 @@ class MCOptimizer(Optimizer):
             raise ValueError(f"Only learn mixed SPNs right now, but got passed _mc_type: {self._mc_type}")
 
     def _learn_mc_mixed(self):
-        """Learn a parametric SPN with per-variable leaf types via learn_parametric.
+        """Learn a parametric SPN with per-variable leaf types.
 
-        Maps each HP's dtype to the appropriate MetaType and parametric distribution:
-          float        -> REAL     -> Gaussian
-          int/str/cat  -> DISCRETE -> Categorical
-          bool         -> BINARY   -> Bernoulli
-        The performance column is always Gaussian (REAL).
-
-        Note: derives types from val['dtype'] (a plain string) rather than
-        val['type'] (a MetaType enum that may come from a different module
-        instance), ensuring the MetaType objects match _METATYPE_TO_PARAMETRIC.
+        Maps each HP's dtype to a leaf distribution (see circuits.parametric_specs):
+          float        -> Normal
+          int          -> Bernoulli (2 values), Normal (>= 10 values), else Categorical
+          str/cat      -> Categorical
+          bool         -> Bernoulli
+        The performance column is always Normal.
         """
-        search_space_definition = self.search_space.get_search_space_definition()
-        meta_types = []
-        param_types = []
-        for val in search_space_definition.values():
-            dtype = val.get('dtype', 'float')
-            if dtype == 'float':
-                meta_types.append(MetaType.REAL)
-                param_types.append(Gaussian)
-            elif dtype == 'int':
-                if 'allowed' in val and val['allowed'] is not None:
-                    n_unique = len(val['allowed'])
-                else:
-                    n_unique = int(val['max']) - int(val['min']) + 1
-                if n_unique == 2:
-                    meta_types.append(MetaType.BINARY)
-                    param_types.append(Bernoulli)
-                elif n_unique >= 10:
-                    meta_types.append(MetaType.REAL)
-                    param_types.append(Gaussian)
-                else:
-                    meta_types.append(MetaType.DISCRETE)
-                    param_types.append(Categorical)
-            elif dtype in ('str', 'cat'):
-                meta_types.append(MetaType.DISCRETE)
-                param_types.append(Categorical)
-            elif dtype == 'bool':
-                meta_types.append(MetaType.BINARY)
-                param_types.append(Bernoulli)
-            else:
-                meta_types.append(MetaType.REAL)
-                param_types.append(Gaussian)
-        meta_types.append(MetaType.REAL)   # performance column
-        param_types.append(Gaussian)
-
-        ctxt = Context(meta_types=meta_types, parametric_types=param_types)
-        ctxt.add_domains(self.data)
-
+        specs = parametric_specs(self.search_space.get_search_space_definition(), int_real_threshold=10)
         min_inst = min(self._mc_min_instances, max(1, self.data.shape[0] // 3))
         try:
-            self.curr_mc = learn_parametric(
+            self.curr_mc = learn_circuit(
                 self.data,
-                ctxt,
+                specs,
                 min_instances_slice=min_inst,
                 threshold=self._mc_rdc_threshold,
-                # leaves=leaves,
+                n_clusters=self._mc_k_clusters,
             )
-        except (ValueError, Exception):
-            ctxt.add_domains(self.data)
-            self.curr_mc = learn_parametric(
+        except Exception:
+            self.curr_mc = learn_circuit(
                 self.data,
-                ctxt,
+                specs,
                 min_instances_slice=max(1, self.data.shape[0] // 2),
                 threshold=0.5,
-                # leaves=leaves,
+                n_clusters=self._mc_k_clusters,
             )
 
     def _get_conditioning_value(self):
@@ -479,7 +416,7 @@ class MCOptimizer(Optimizer):
         if not np.isnan(cond_array).any():
             spn_candidates = cond_array
         else:
-            spn_candidates = sample_instances(self.curr_mc, cond_array, self._rand_state)
+            spn_candidates = sample(self.curr_mc, cond_array, seed=self._rand_state.randint(2**31 - 1))
         spn_hp = spn_candidates[:, :-1]
 
         # --- Uniform-random half (only when not intervening) ---
@@ -492,7 +429,7 @@ class MCOptimizer(Optimizer):
         # --- Compute p-values on HP dimensions (marginalize performance) ---
         full_evidence = np.full((pool_size, n_dims), np.nan)
         full_evidence[:, :-1] = hp_pool
-        pvals = pvalue_spflow(self.curr_mc, full_evidence, side="both").squeeze()
+        pvals = pvalues(self.curr_mc, full_evidence, side="both")
 
         # --- Stratified selection: B power-law bins by p-value rank ---
         # Bin b covers pool positions [q_b, q_{b+1}] where q_b = (b/B)^gamma.

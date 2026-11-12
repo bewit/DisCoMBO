@@ -1,7 +1,6 @@
 from typing import Dict
 from .benchmark import BaseBenchmark, BenchQueryResult
 from ..search_spaces import HPOBSearchSpace
-from spn.structure.StatisticalTypes import MetaType
 import json
 import xgboost as xgb
 import numpy as np

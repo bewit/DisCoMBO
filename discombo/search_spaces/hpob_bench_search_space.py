@@ -2,7 +2,7 @@ from .search_space import SearchSpace
 import json
 import os
 import numpy as np
-from spn.structure.StatisticalTypes import MetaType
+from ..consts.dtypes import MetaType
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, \
     UniformFloatHyperparameter, UniformIntegerHyperparameter

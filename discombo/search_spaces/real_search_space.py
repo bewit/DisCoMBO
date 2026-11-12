@@ -4,7 +4,7 @@ import numpy as np
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter
 from syne_tune.config_space import Float
-from spn.structure.StatisticalTypes import MetaType
+from ..consts.dtypes import MetaType
 
 class RealSearchSpace(SearchSpace):
 

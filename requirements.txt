@@ -79,7 +79,7 @@ netifaces==0.11.0
 networkx==2.6.3
 ngboost==0.3.11
 nose==1.3.7
-numpy==1.24.4
+numpy==1.26.4
 nvidia-cublas-cu12==12.1.3.1
 nvidia-cuda-cupti-cu12==12.1.105
 nvidia-cuda-nvrtc-cu12==12.1.105
@@ -95,7 +95,7 @@ nvidia-nvtx-cu12==12.1.105
 openml==0.14.1
 opt-einsum==3.3.0
 optuna
-botorch
+botorch==0.11.3
 oslo.concurrency==5.2.0
 oslo.config==9.2.0
 oslo.i18n==6.2.0
@@ -123,7 +123,7 @@ ptyprocess==0.7.0
 pure-eval==0.2.2
 py==1.11.0
 pybnn==0.0.5
-pydot==1.4.2
+pydot==4.0.1
 pydotz==1.5.1
 Pygments==2.16.1
 pymoo==0.6.0.1
@@ -175,8 +175,8 @@ threadpoolctl==3.2.0
 tifffile==2023.7.10
 toml==0.10.2
 toolz==0.12.0
-torch==1.11.0
-torchvision==0.12
+torch==2.1.1
+torchvision==0.16.1
 tornado==6.3.3
 tqdm==4.61.1
 traitlets==5.13.0
@@ -201,3 +201,5 @@ deap
 hebo
 catboost
 disjoint_set
+einops>=0.8.2
+spflow==1.1.0

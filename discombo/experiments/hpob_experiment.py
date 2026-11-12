@@ -3,7 +3,6 @@ from .experiment import BenchmarkExperiment
 from ..benchmarks import BenchmarkFactory
 from ..optimizers import OptimizerFactory
 from copy import deepcopy
-from spn.structure.StatisticalTypes import MetaType
 import os
 import numpy as np
 

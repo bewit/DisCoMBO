@@ -1,6 +1,6 @@
 from .search_space import SearchSpace
 import numpy as np
-from spn.structure.StatisticalTypes import MetaType
+from ..consts.dtypes import MetaType
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter, UniformIntegerHyperparameter
 from syne_tune.config_space import Float, loguniform, Integer

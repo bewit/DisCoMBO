@@ -5,7 +5,7 @@ from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
     IntegerHyperparameter, OrdinalHyperparameter, CategoricalHyperparameter
 import numpy as np
 from copy import deepcopy
-from spn.structure.StatisticalTypes import MetaType
+from ..consts.dtypes import MetaType
 from syne_tune.config_space import Float, Integer, Ordinal
 
 class HPOBenchTabularSearchSpace(SearchSpace):

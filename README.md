@@ -10,7 +10,7 @@ We recommend to run the code in a `Docker` container, we don't guarantee a worki
 To setup the code and run experiments do the following instructions:
 
 1. Navigate to the root directory of the repository
-2. Run `docker build --build-arg baseimage=python:3.9-slim --no-cache --tag discombo .`
+2. Run `docker build --build-arg baseimage=python:3.10-slim --no-cache --tag discombo .`
 3. Run `docker run -v [HOST_PATH]:/app/ -it discombo` to enter the Docker container.
 4. Run `python main.py --exp [exp] --optimizer [optimizer]` to run the code (change options accordingly).
 
@@ -57,6 +57,11 @@ The following optimizers are implemented:
 
 > Note: PriorBand is currently not supported in the Docker environment. However, it can be started on the host machine (which might trigger some errors due to missing 
 dependencies). The reason is that it is currently incompatible with packages installed in the Docker container. Will be fixed in future releases.
+
+## Probabilistic Circuits
+The probabilistic circuits (PCs) of DisCoMBO (`mc_stratified`) and IBO-HPC (`pc`) are built on [SPFlow](https://github.com/SPFlow/SPFlow) (`spflow==1.1.0`, installed via `requirements.txt`, requires Python 3.10).
+The DisCoMBO-specific parts are implemented in `discombo/circuits/`: LearnSPN structure learning (equivalent to legacy SPFlow's `learn_parametric`/`learn_mspn`), conditioning, conditional sampling and the bottom-up p-value inference (weighted arithmetic mean at sum nodes, Fisher's method at product nodes).
+Its tests do not require the benchmark dependencies and can be run with `pytest -p no:anyio tests/` (the pytest version pinned in the Docker image is incompatible with the installed anyio plugin).
 
 ## Interactions
 To simulate user interactions we allow you to put json-files into the `interventions` directory. The json-files should have the following structure:
