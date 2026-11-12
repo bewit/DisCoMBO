@@ -4,11 +4,11 @@ from ..circuits import ConditioningError, condition, learn_circuit, parametric_s
 from ..search_spaces import SearchSpace
 from ..utils import ConfigurationNumericalTransform
 from ..utils.sampling import sample_from_ball
+import logging
 import numpy as np
-import warnings
 from time import time
 
-warnings.filterwarnings("ignore")
+logger = logging.getLogger(__name__)
 
 """
     Implementation of the MC-HPO optimizer.
@@ -77,9 +77,10 @@ class MCOptimizer(Optimizer):
             mc_type: SPN learning variant. Only 'mixed' is supported: per-variable
                 parametric leaves (Normal/Categorical/Bernoulli per hyperparameter dtype).
             log_hpo_runtime: Whether to log optimizer runtime.
-            seed: Random seed.
+            seed: Random seed. All randomness of the optimizer is drawn from a random state seeded with it;
+                numpy's and torch's global random states are left untouched.
         """
-        super().__init__(search_space, objective)
+        super().__init__(search_space, objective, seed=seed)
         self.search_space = search_space
         self.objective = objective
         self._num_iterations = iterations
@@ -145,9 +146,6 @@ class MCOptimizer(Optimizer):
         intervene = False
         for i in range(self._num_iterations):
             self._curr_iter = i
-            if i % 10 == 0:
-                print(f"Iteration {i+1}/{self._num_iterations}")
-
             start_time = time() if self._log_hpo_runtime else None
 
             if self.curr_mc is None:
@@ -158,7 +156,8 @@ class MCOptimizer(Optimizer):
             if self._intervention_iters is not None and self._interventions is not None:
                 if i in self._intervention_iters:
                     int_idx = self._intervention_iters.index(i)
-                    print(f"[Optimizer][MC] Using Intervention {int_idx}: {self._interventions[int_idx]}")
+                    logger.info("Iteration %d: applying intervention %d: %s", i + 1, int_idx,
+                                self._interventions[int_idx])
                     self._intervention = self._interventions[int_idx]
                     intervene = True and self._intervention is not None
                     if intervene:
@@ -174,10 +173,10 @@ class MCOptimizer(Optimizer):
                         try:
                             cond_mc = condition(self.curr_mc, perf_evidence)
                         except ConditioningError:
-                            print(
-                                "[Optimizer][MC] condition() failed "
-                                "(sum-node normalizer underflow); "
-                                "falling back to joint marginal for p-value"
+                            logger.warning(
+                                "Iteration %d: conditioning on the best observed value failed (sum-node "
+                                "normalizer underflow); computing the intervention p-value w.r.t. the joint "
+                                "distribution instead.", i + 1
                             )
                             cond_mc = self.curr_mc
 
@@ -194,10 +193,8 @@ class MCOptimizer(Optimizer):
                             "pval_vec": np.atleast_1d(pvals).astype(float).tolist(),
                         })
                         if self._abort_after_intervention:
-                            print(
-                                f"[Optimizer][MC] abort_after_intervention set; "
-                                f"stopping at iter {i} after capturing p-value."
-                            )
+                            logger.info("Iteration %d: abort_after_intervention is set, stopping after "
+                                        "computing the intervention p-value.", i + 1)
                             break
 
             configs = self._sample(intervene=intervene)
@@ -208,7 +205,8 @@ class MCOptimizer(Optimizer):
             self._evaluate(configs)
             if self._exploit_override_remaining > 0:
                 self._exploit_override_remaining -= 1
-            print(f"BEST: {self.data[:, -1].max()}")
+            logger.info("Iteration %d/%d: best observed value %.6g", i + 1, self._num_iterations,
+                        self.data[:, -1].max())
 
         val_performances = [e.val_performance for _, e, _ in self.evaluations]
         max_idx = int(np.argmax(val_performances))
@@ -240,7 +238,7 @@ class MCOptimizer(Optimizer):
 
     def _learn_init_mc(self):
         """Sample initial random configs, evaluate, and learn the first SPN."""
-        configs = self.search_space.sample(size=self._initial_samples)
+        configs = self.search_space.sample(size=self._initial_samples, rng=self._rand_state)
         scores = [self.objective(cfg) for cfg in configs]
         self.data = self._build_dataset(configs, scores)
         self._learn_mc()
@@ -292,7 +290,7 @@ class MCOptimizer(Optimizer):
         Returns: np.ndarray of shape (size, n_dims - 1) — HP cols only,
         scaled to match the SPN's input space when normalize_inputs=True.
         """
-        configs = self.search_space.sample(size=size)
+        configs = self.search_space.sample(size=size, rng=self._rand_state)
         rows = [self.transform.transform_configuration(cfg) for cfg in configs]
         arr = np.asarray(rows, dtype=float)
         # Build a (size, n_dims) matrix with NaN perf so _scale_to_full
@@ -304,10 +302,10 @@ class MCOptimizer(Optimizer):
 
     def _apply_point_intervention(self, data):
         """Apply point intervention to conditioning data (same as PCOptimizer)."""
-        prot_cfg = self.search_space.sample(keep_domain=False, size=1)[0]
+        names = list(self.search_space.get_search_space_definition())
         keys = list(self._intervention.keys())
         if self._intervention is not None:
-            for idx, key in enumerate(prot_cfg.keys()):
+            for idx, key in enumerate(names):
                 if key in keys:
                     data[idx] = self._intervention[key]
         return data
@@ -317,29 +315,31 @@ class MCOptimizer(Optimizer):
         if size is None:
             size = self._samples_per_iter
 
+        rng = self._rand_state
+
         def sample_from_condition_prior(intervention_key):
             if self._intervention[intervention_key]['dist'] == 'gauss':
                 mu, std = self._intervention[intervention_key]['parameters']
-                samples = np.random.normal(mu, std, size)
+                samples = rng.normal(mu, std, size)
             elif self._intervention[intervention_key]['dist'] == 'uniform':
                 s, e = self._intervention[intervention_key]['parameters']
-                samples = np.random.uniform(s, e, size)
+                samples = rng.uniform(s, e, size)
             elif self._intervention[intervention_key]['dist'] == 'int_uniform':
                 s, e = self._intervention[intervention_key]['parameters']
-                samples = np.random.randint(s, e, size)
+                samples = rng.randint(s, e, size)
             elif self._intervention[intervention_key]['dist'] == 'cat':
                 weights = self._intervention[intervention_key]['parameters']
                 probs = np.array(weights) / np.sum(weights)
-                samples = np.random.choice(np.arange(len(probs)), size, p=probs)
+                samples = rng.choice(np.arange(len(probs)), size, p=probs)
             return samples
 
-        prot_cfg = self.search_space.sample(keep_domain=False, size=1)[0]
+        names = list(self.search_space.get_search_space_definition())
         keys = list(self._intervention.keys())
         cond_samples = np.array(
-            [np.nan] * size * (len(prot_cfg) + 1)
-        ).reshape(-1, len(prot_cfg) + 1)
+            [np.nan] * size * (len(names) + 1)
+        ).reshape(-1, len(names) + 1)
         if self._intervention is not None:
-            for idx, key in enumerate(prot_cfg.keys()):
+            for idx, key in enumerate(names):
                 if key in keys:
                     if isinstance(self._intervention[key], dict):
                         cond_samples[:, idx] = sample_from_condition_prior(key)
@@ -380,7 +380,7 @@ class MCOptimizer(Optimizer):
         # During an active intervention we keep the full pool conditioned so
         # intervention semantics are preserved.
         if intervene:
-            accept_intervention = np.random.choice(
+            accept_intervention = self._rand_state.choice(
                 [1, 0], p=[self._prob_interaction_pc, 1 - self._prob_interaction_pc])
             self._prob_interaction_pc *= self._interaction_dist_sample_decay
         else:
@@ -506,7 +506,7 @@ class MCOptimizer(Optimizer):
             active_radius = self.ball_radius
         sampled_configs_np = sample_from_ball(
             sampled_configs_np, self.search_space, active_radius,
-            sampled_configs_np.shape[0]
+            sampled_configs_np.shape[0], rng=self._rand_state
         )
 
         # Clamp to search space bounds

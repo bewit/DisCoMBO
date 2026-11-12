@@ -1,3 +1,8 @@
+# Adapted from SPFlow (legacy branch, https://github.com/SPFlow/SPFlow/tree/legacy):
+# spn/algorithms/splitting/RDC.py (@author: Alejandro Molina).
+# Copyright 2018 Authors and Contributors (https://github.com/alejandromolinaml/SPFlow/).
+# Licensed under the Apache License, Version 2.0; see LICENSE and NOTICE.
+# Modified by the DisCoMBO authors for the circuits built on SPFlow >= 1.0.
 """
     Randomized dependence coefficient (RDC) column partitioning, ported from legacy SPFlow
     (`spn.algorithms.splitting.RDC.getIndependentRDCGroups_py`).

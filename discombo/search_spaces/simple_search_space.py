@@ -1,4 +1,6 @@
 import numpy as np
+from sklearn.utils import check_random_state
+
 from .search_space import SearchSpace
 
 
@@ -23,22 +25,29 @@ class SimpleSearchSpace(SearchSpace):
                 raise ValueError(f"Discrete hyperparameter '{name}' needs a list of 'allowed' values.")
             self.search_space_definition[name] = hp_def
 
-    def sample(self, size=1, keep_domain=True, **kwargs):
+    def sample(self, size=1, keep_domain=True, rng=None, **kwargs):
         """
             Sample random configurations. With keep_domain=False, discrete hyperparameters
             are returned as indices into their 'allowed' values.
+
+            Args:
+                size (int, optional): Number of configurations. Defaults to 1.
+                keep_domain (bool, optional): Return discrete values instead of their indices. Defaults to True.
+                rng (None, int or np.random.RandomState, optional): Source of randomness. None uses numpy's global
+                    random state. Defaults to None.
         """
+        rng = check_random_state(rng)
         configurations = []
         for _ in range(size):
             cfg = {}
             for name, hp_def in self.search_space_definition.items():
                 if hp_def['dtype'] == 'float':
                     if hp_def['is_log']:
-                        cfg[name] = float(np.exp(np.random.uniform(np.log(hp_def['min']), np.log(hp_def['max']))))
+                        cfg[name] = float(np.exp(rng.uniform(np.log(hp_def['min']), np.log(hp_def['max']))))
                     else:
-                        cfg[name] = float(np.random.uniform(hp_def['min'], hp_def['max']))
+                        cfg[name] = float(rng.uniform(hp_def['min'], hp_def['max']))
                 else:
-                    idx = np.random.randint(len(hp_def['allowed']))
+                    idx = rng.randint(len(hp_def['allowed']))
                     cfg[name] = hp_def['allowed'][idx] if keep_domain else idx
             configurations.append(cfg)
         return configurations

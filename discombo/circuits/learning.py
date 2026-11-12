@@ -1,3 +1,9 @@
+# Adapted from SPFlow (legacy branch, https://github.com/SPFlow/SPFlow/tree/legacy):
+# spn/algorithms/StructureLearning.py, spn/algorithms/splitting/Clustering.py,
+# spn/algorithms/TransformStructure.py and spn/algorithms/LearningWrappers.py (@author: Alejandro Molina).
+# Copyright 2018 Authors and Contributors (https://github.com/alejandromolinaml/SPFlow/).
+# Licensed under the Apache License, Version 2.0; see LICENSE and NOTICE.
+# Modified by the DisCoMBO authors: ported to the PyTorch modules of SPFlow >= 1.0.
 """
     LearnSPN structure learning for DisCoMBO circuits.
 

@@ -1,23 +1,58 @@
 [build-system]
-requires = ["setuptools>=64"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "discombo"
 version = "1.0.0"
-description = "DisCoMBO: Steering Expert-in-the-Loop Black Box Optimization via Distributional Conformance"
+description = "DisCoMBO: Steering Expert-in-the-Loop Black-Box Optimization via Distributional Conformance"
 readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [
+    { name = "Jonas Seng" },
+    { name = "Bennet Wittelsbach" },
+    { name = "Kristian Kersting" },
+]
 requires-python = ">=3.10"
 dependencies = [
-    "spflow~=1.1.0",
-    "torch>=2.1",
+    # discombo.circuits uses SPFlow internals (Cat, Cache, LeafModule) that may change in minor releases
+    "spflow>=1.1,<1.2",
+    # torch < 2.3 and scikit-learn < 1.3.1 or == 1.4.0 break with NumPy 2 without declaring numpy < 2
+    "torch>=2.3",
     "numpy>=1.26.4",
     "scipy>=1.10",
-    "scikit-learn>=1.0",
+    "scikit-learn>=1.3.1,!=1.4.0",
+]
+keywords = [
+    "black-box optimization",
+    "hyperparameter optimization",
+    "expert-in-the-loop",
+    "probabilistic circuits",
+    "sum-product networks",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
 [project.optional-dependencies]
 test = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/bewit/DisCoMBO"
+Repository = "https://github.com/bewit/DisCoMBO"
+Paper = "https://arxiv.org/abs/2609.36472"
+Issues = "https://github.com/bewit/DisCoMBO/issues"
 
 [tool.setuptools.packages.find]
 include = ["discombo*"]

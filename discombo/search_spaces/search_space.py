@@ -26,6 +26,11 @@ class SearchSpace:
         return list(hp_intersection)
 
     def sample(self, **kwargs):
+        """
+            Sample random configurations. DisCoMBO's optimizers call `sample(size=..., rng=...)`, where `rng` is
+            their seeded np.random.RandomState. Implementations should draw all randomness from `rng` to keep
+            optimization runs reproducible.
+        """
         raise NotImplementedError('Base class does not implement sample')
     
     def get_neighbors(self, config):

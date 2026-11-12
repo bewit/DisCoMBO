@@ -1,0 +1,22 @@
+DisCoMBO
+Copyright 2026 The DisCoMBO Authors
+
+This product includes software adapted from SPFlow (legacy branch,
+https://github.com/SPFlow/SPFlow/tree/legacy), Copyright 2018 Authors and
+Contributors (https://github.com/alejandromolinaml/SPFlow/), licensed under the
+Apache License, Version 2.0:
+
+  - discombo/circuits/rdc.py: randomized dependence coefficient
+    (spn/algorithms/splitting/RDC.py)
+  - discombo/circuits/learning.py: LearnSPN structure learning, KMeans
+    clustering and pruning (spn/algorithms/StructureLearning.py,
+    spn/algorithms/splitting/Clustering.py,
+    spn/algorithms/TransformStructure.py, spn/algorithms/LearningWrappers.py)
+  - discombo/circuits/leaves.py: leaf parameter estimation and domains
+    (spn/structure/leaves/parametric/Parametric.py,
+    spn/structure/leaves/parametric/MLE.py, spn/structure/Base.py)
+  - discombo/circuits/inference.py: conditioning on evidence
+    (spn/algorithms/Condition.py)
+
+These files were modified by the DisCoMBO authors: they were ported to the
+PyTorch modules of SPFlow >= 1.0.

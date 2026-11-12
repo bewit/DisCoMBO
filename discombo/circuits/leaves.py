@@ -1,3 +1,9 @@
+# Adapted from SPFlow (legacy branch, https://github.com/SPFlow/SPFlow/tree/legacy):
+# spn/structure/leaves/parametric/Parametric.py, spn/structure/leaves/parametric/MLE.py and
+# spn/structure/Base.py (@author: Alejandro Molina).
+# Copyright 2018 Authors and Contributors (https://github.com/alejandromolinaml/SPFlow/).
+# Licensed under the Apache License, Version 2.0; see LICENSE and NOTICE.
+# Modified by the DisCoMBO authors: ported to the PyTorch modules of SPFlow >= 1.0.
 """
     Leaf construction for DisCoMBO circuits.
 
