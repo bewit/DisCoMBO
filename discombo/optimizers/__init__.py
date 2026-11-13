@@ -1,2 +1,7 @@
 from .optimizer import Optimizer
-from .mc_optimizer import MCOptimizer
+from .disco_optimizer import DisCoOptimizer
+from .._deprecation import module_getattr
+
+
+def __getattr__(name):  # deprecated names
+    return module_getattr(globals(), name)

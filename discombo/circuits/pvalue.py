@@ -1,5 +1,6 @@
 """
-    Bottom-up p-value inference on DisCoMBO circuits (formerly `membership_circuits.models.nodewise.spflow_pvalue`).
+    Bottom-up p-value inference on DisCoMBO circuits: the distributional conformance (DisCo) score of a
+    configuration is its p-value under the circuit.
 
     Leaves:   Normal -> CDF tail probability, Categorical/Bernoulli -> PMF of the observation.
               Marginalized (NaN) values -> 1.

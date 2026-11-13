@@ -1,4 +1,11 @@
-class BenchQueryResult(dict):
+from ._deprecation import module_getattr
+
+
+class EvaluationResult(dict):
+    """
+        Result of evaluating a configuration: its train, validation and test performance (DisCoMBO maximizes the
+        validation performance) and optional losses, cost, epochs and the optimizer's cost.
+    """
 
     SUPPORTED_METRICS = ['train_performance', 'val_performance', 'test_performance', 
                 'cost', 'train_loss', 'val_loss', 'test_loss', 'epochs', 'optim_cost']
@@ -17,7 +24,7 @@ class BenchQueryResult(dict):
         self._optim_cost = optim_cost
 
     def _to_string(self):
-        return "Benchmark Query Result:\n" +\
+        return "Evaluation Result:\n" +\
             f"Train-Performance: {self._train_perf}\n" +\
             f"Val-Performance: {self._val_perf}\n" +\
             f"Test-Performance: {self._test_pref}\n" +\
@@ -53,8 +60,8 @@ class BenchQueryResult(dict):
 
     def set_cost(self, cost):
         """
-            Sometimes cost are experiment-dependent (e.g. we want cummulative costs of multiple runs in LS instead of cost of a single configuration).
-            This allows us to be flexible and allows to set the costs as needed.
+            Set the cost, e.g. when costs depend on the experiment (such as cumulative costs of several evaluations
+            instead of the cost of a single configuration).
         """
         self._cost = cost
 
@@ -112,3 +119,7 @@ class BenchQueryResult(dict):
     @property
     def optim_cost(self):
         return self._optim_cost
+
+
+def __getattr__(name):  # deprecated names
+    return module_getattr(globals(), name)

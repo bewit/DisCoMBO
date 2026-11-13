@@ -1,7 +1,7 @@
 class SearchSpace:
 
     """
-        Represents a search space of an HPO problem and provides a unified
+        Represents the search space of an optimization problem and provides a unified
         API for certain operations on the search space such as sampling and
         getting neigbor configurations.
         Usually used to sample random configurations at the beginning of

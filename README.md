@@ -46,10 +46,10 @@ On macOS and Windows, the default PyTorch build from PyPI is already CPU-only.
 
 ## Usage
 DisCoMBO maximizes an objective over a search space. The search space is defined by a dictionary mapping each hyperparameter to its type and domain;
-the objective takes a configuration (a dictionary) and returns a number or a `BenchQueryResult`, whose validation performance is maximized.
+the objective takes a configuration (a dictionary) and returns a number or an `EvaluationResult`, whose validation performance is maximized.
 
 ```python
-from discombo import BenchQueryResult, MCOptimizer, SimpleSearchSpace
+from discombo import DisCoOptimizer, EvaluationResult, SimpleSearchSpace
 
 space = SimpleSearchSpace({
     'lr': {'dtype': 'float', 'min': 1e-4, 'max': 1e-1, 'is_log': True},
@@ -59,9 +59,9 @@ space = SimpleSearchSpace({
 
 def objective(cfg):
     score = ...  # evaluate cfg
-    return BenchQueryResult(score, score, score)  # train, validation and test performance
+    return EvaluationResult(score, score, score)  # train, validation and test performance
 
-optimizer = MCOptimizer(space, objective, iterations=50, num_samples=10, initial_samples=20, seed=0)
+optimizer = DisCoOptimizer(space, objective, iterations=50, num_samples=10, initial_samples=20, seed=0)
 best_cfg, best_result = optimizer.optimize()
 ```
 
@@ -82,12 +82,12 @@ Instead of passing an objective, you can also evaluate the configurations yourse
 Each `ask` returns a batch of configurations: the initial random design first, then `num_samples` configurations per DisCoMBO iteration.
 
 ```python
-optimizer = MCOptimizer(space, num_samples=10, initial_samples=20, seed=0)
+optimizer = DisCoOptimizer(space, num_samples=10, initial_samples=20, seed=0)
 configs = optimizer.ask()            # the initial random design
 optimizer.tell(configs, [evaluate(cfg) for cfg in configs])
 while optimizer.iteration < 50:      # one DisCoMBO iteration per ask
     configs = optimizer.ask()
-    optimizer.tell(configs, [evaluate(cfg) for cfg in configs])  # numbers, BenchQueryResults or None (failed)
+    optimizer.tell(configs, [evaluate(cfg) for cfg in configs])  # numbers, EvaluationResults or None (failed)
 best_cfg, best_result = optimizer.best()
 ```
 
@@ -107,7 +107,7 @@ optimizer.intervene(
 ```
 
 Continuous hyperparameters with `'is_log': True` are modeled in log space, so their intervention values are given in log space as well.
-After optimization, `optimizer.get_intervention_pval_log()` returns the distributional conformance (p-values) of each intervention w.r.t. the model.
+After optimization, `optimizer.get_disco_scores()` returns the distributional conformance (DisCo) score of each intervention w.r.t. the model; low scores indicate beliefs that contradict the observations.
 
 ### Usage with Optuna
 The `DisCoMBOSampler` on OptunaHub runs DisCoMBO as an Optuna sampler: after `n_startup_trials` random trials, DisCoMBO proposes batches of `batch_size` configurations for the following trials.
@@ -121,14 +121,14 @@ sampler = optunahub.load_module("samplers/discombo").DisCoMBOSampler(seed=0, n_s
 sampler.intervene({"optimizer": "adam"}, trial_number=30)  # optional: an expert belief
 study = optuna.create_study(direction="maximize", sampler=sampler)
 study.optimize(objective, n_trials=100)  # objective(trial) as usual in Optuna
-print(sampler.get_intervention_pvalues())  # conformance of the belief with the observations
+print(sampler.get_disco_scores())  # DisCo score of the belief w.r.t. the observations
 ```
 
 See the [OptunaHub page](https://hub.optuna.org/samplers/discombo/) for all options.
 
 ## Structure
-- `discombo/optimizers/mc_optimizer.py`: the DisCoMBO optimizer.
-- `discombo/circuits/`: the probabilistic circuits on top of SPFlow: LearnSPN structure learning, conditioning, conditional sampling and the bottom-up p-value inference (weighted arithmetic mean at sum nodes, Fisher's method at product nodes).
+- `discombo/optimizers/disco_optimizer.py`: the DisCoMBO optimizer `DisCoOptimizer`.
+- `discombo/circuits/`: the probabilistic circuits on top of SPFlow: LearnSPN structure learning, conditioning, conditional sampling and the bottom-up inference of DisCo scores, i.e. p-values (weighted arithmetic mean at sum nodes, Fisher's method at product nodes).
 - `discombo/search_spaces/`: the search space interface and `SimpleSearchSpace`.
 
 ## Tests

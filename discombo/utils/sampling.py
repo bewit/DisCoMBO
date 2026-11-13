@@ -10,7 +10,7 @@ def sample_from_ball(center, search_space: SearchSpace, radius, n_samples, rng=N
 
     Parameters:
         center (array-like): Coordinates of the center of the ball.
-        search_space (SearchSpace): Search space of the current HPO task.
+        search_space (SearchSpace): Search space of the optimization problem.
         radius (list or float): Radius of the ball per dimension.
         n_samples (int): Number of points to sample.
         rng (None, int or np.random.RandomState): Source of randomness. None uses numpy's global random state.
